@@ -7,12 +7,6 @@ import { MigratorConfig, UserConfig, UserLevels } from '../../common/types';
 
 import { PgClientConfig } from '../types/configs';
 
-type RoleConfig = UserConfig & {
-  database: string;
-  schema?: string;
-};
-
-const DEFAULT_SCHEMA = 'public';
 const ENTITIES = ['TABLES', 'SEQUENCES', 'FUNCTIONS'];
 
 /**
@@ -34,10 +28,9 @@ function createSafeRawExecutor(
  */
 async function createRoleIfNotExists(
   knex: Knex,
-  role: RoleConfig,
+  username: string,
+  password: string,
 ): Promise<void> {
-  const { password, username } = role;
-
   try {
     await rawQuery(knex, 'CREATE ROLE ?? LOGIN PASSWORD ?;', [
       username,
@@ -62,9 +55,10 @@ async function createRoleIfNotExists(
  */
 async function revokeRoleAllPrivileges(
   knex: Knex,
-  role: RoleConfig,
+  username: string,
+  schema: string,
 ): Promise<void> {
-  const execQuery = createSafeRawExecutor(knex, [role.schema, role.username]);
+  const execQuery = createSafeRawExecutor(knex, [schema, username]);
 
   for (const entity of ENTITIES) {
     await execQuery(
@@ -83,9 +77,10 @@ async function revokeRoleAllPrivileges(
  */
 async function grantRoleFullPrivileges(
   knex: Knex,
-  role: RoleConfig,
+  username: string,
+  schema: string,
 ): Promise<void> {
-  const execQuery = createSafeRawExecutor(knex, [role.schema, role.username]);
+  const execQuery = createSafeRawExecutor(knex, [schema, username]);
 
   await execQuery('GRANT ALL ON SCHEMA ?? TO ?? WITH GRANT OPTION;');
 
@@ -104,9 +99,10 @@ async function grantRoleFullPrivileges(
  */
 async function grantRoleBasePrivileges(
   knex: Knex,
-  role: RoleConfig,
+  username: string,
+  schema: string,
 ): Promise<void> {
-  const execQuery = createSafeRawExecutor(knex, [role.schema, role.username]);
+  const execQuery = createSafeRawExecutor(knex, [schema, username]);
 
   await execQuery(
     'ALTER DEFAULT PRIVILEGES IN SCHEMA ?? GRANT SELECT, USAGE ON SEQUENCES TO ??;',
@@ -124,11 +120,12 @@ async function grantRoleBasePrivileges(
  */
 async function grantRoleWritePrivileges(
   knex: Knex,
-  role: RoleConfig,
+  username: string,
+  schema: string,
 ): Promise<void> {
-  const execQuery = createSafeRawExecutor(knex, [role.schema, role.username]);
+  const execQuery = createSafeRawExecutor(knex, [schema, username]);
 
-  await grantRoleBasePrivileges(knex, role);
+  await grantRoleBasePrivileges(knex, username, schema);
 
   await execQuery(
     'ALTER DEFAULT PRIVILEGES IN SCHEMA ?? GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON TABLES TO ??;',
@@ -143,11 +140,12 @@ async function grantRoleWritePrivileges(
  */
 async function grantRoleReadPrivileges(
   knex: Knex,
-  role: RoleConfig,
+  username: string,
+  schema: string,
 ): Promise<void> {
-  const execQuery = createSafeRawExecutor(knex, [role.schema, role.username]);
+  const execQuery = createSafeRawExecutor(knex, [schema, username]);
 
-  await grantRoleBasePrivileges(knex, role);
+  await grantRoleBasePrivileges(knex, username, schema);
 
   await execQuery(
     'ALTER DEFAULT PRIVILEGES IN SCHEMA ?? GRANT SELECT ON TABLES TO ??;',
@@ -160,19 +158,22 @@ async function grantRoleReadPrivileges(
  */
 async function updateRolePrivileges(
   knex: Knex,
-  role: RoleConfig,
+  user: UserConfig,
+  schema: string,
 ): Promise<void> {
-  await revokeRoleAllPrivileges(knex, role);
+  const { level, username } = user;
 
-  switch (role.level) {
+  await revokeRoleAllPrivileges(knex, username, schema);
+
+  switch (level) {
     case UserLevels.Full:
-      await grantRoleFullPrivileges(knex, role);
+      await grantRoleFullPrivileges(knex, username, schema);
       break;
     case UserLevels.Write:
-      await grantRoleWritePrivileges(knex, role);
+      await grantRoleWritePrivileges(knex, username, schema);
       break;
     case UserLevels.Read:
-      await grantRoleReadPrivileges(knex, role);
+      await grantRoleReadPrivileges(knex, username, schema);
       break;
   }
 }
@@ -185,26 +186,25 @@ export async function prepareUsers(
   migratorConfig: MigratorConfig,
 ): Promise<void> {
   const { users } = migratorConfig;
-  const { database, user } = clientConfig.connection;
-
-  const schema = migratorConfig.schemaName || DEFAULT_SCHEMA;
-
-  if (!database) throw new Error('Empty database');
 
   if (!users?.length) return;
 
+  const { connection, searchPath } = clientConfig;
+  const { database, user: currentUser } = connection;
+
+  if (!database) throw new Error('Empty database');
+
   const knex = pgKnexFactory(clientConfig);
-  const roles = users.map((userItem) => {
-    return { ...userItem, database, schema };
-  });
 
   await Promise.all(
-    roles.map(async (role) => {
-      // изменять роль текущего подключения нельзя
-      if (user === role.username) return;
+    users.map(async (user) => {
+      const { password, username } = user;
 
-      await createRoleIfNotExists(knex, role);
-      await updateRolePrivileges(knex, role);
+      // изменять роль текущего подключения нельзя
+      if (currentUser === user.username) return;
+
+      await createRoleIfNotExists(knex, username, password);
+      await updateRolePrivileges(knex, user, searchPath);
     }),
   );
 

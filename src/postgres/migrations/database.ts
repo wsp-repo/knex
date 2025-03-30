@@ -31,15 +31,13 @@ async function createDatabaseIfNotExists(
  */
 async function createSchemaIfNotExists(
   clientConfig: PgClientConfig,
-  migratorConfig: MigratorConfig,
+  schemaName?: string,
 ): Promise<void> {
-  if (!migratorConfig.schemaName) return;
+  if (!schemaName) return;
 
   const knex = pgKnexFactory(clientConfig);
 
-  await rawQuery(knex, 'CREATE SCHEMA IF NOT EXISTS ??;', [
-    migratorConfig.schemaName,
-  ]);
+  await rawQuery(knex, 'CREATE SCHEMA IF NOT EXISTS ??;', [schemaName]);
 
   await knex.destroy();
 }
@@ -52,5 +50,6 @@ export async function prepareDatabase(
   migratorConfig: MigratorConfig,
 ): Promise<void> {
   await createDatabaseIfNotExists(clientConfig);
-  await createSchemaIfNotExists(clientConfig, migratorConfig);
+  await createSchemaIfNotExists(clientConfig, clientConfig.searchPath);
+  await createSchemaIfNotExists(clientConfig, migratorConfig.schemaName);
 }

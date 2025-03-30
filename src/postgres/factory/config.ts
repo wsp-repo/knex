@@ -1,9 +1,13 @@
 import { trimObject } from '@zalib/core/dist';
-import { Knex } from 'knex';
 
 import { PgKnexConfig } from '../types';
 
-import { PgClientConfig, PgConnectionConfig } from '../types/configs';
+import { DEFAULT_SCHEMA } from '../constants';
+import {
+  KnexPgConnectionConfig,
+  PgClientConfig,
+  PgConnectionConfig,
+} from '../types/configs';
 
 /**
  * Адаптирует имя приложения под имя соединения
@@ -21,8 +25,9 @@ export function getApplicationName(applicationName?: string): string {
 /**
  * Возвращает декомпозированный конфиг соединения
  */
+// eslint-disable-next-line complexity
 function prepareConnection(
-  connection: Knex.PgConnectionConfig | PgConnectionConfig,
+  connection: KnexPgConnectionConfig | PgConnectionConfig,
   applicationName?: string,
 ): PgConnectionConfig {
   const {
@@ -32,6 +37,7 @@ function prepareConnection(
     user: userConfig,
     password: passConfig,
     database: baseConfig,
+    schema: schemaConfig,
     ...other
   } = connection;
 
@@ -44,6 +50,10 @@ function prepareConnection(
     host: hostConfig || connectionUrl?.hostname || 'localhost',
     password: passConfig || connectionUrl?.password,
     port: portConfig || Number(connectionUrl?.port) || 5432,
+    schema:
+      schemaConfig ||
+      connectionUrl?.searchParams.get('currentSchema') ||
+      DEFAULT_SCHEMA,
     user: userConfig || connectionUrl?.username,
   });
 }
@@ -54,9 +64,9 @@ function prepareConnection(
 export function pgClientConfig(
   config: PgKnexConfig | PgClientConfig,
 ): PgClientConfig {
-  const { connection, applicationName } = config;
+  const { connection: confConnection, applicationName } = config;
 
-  const conn = prepareConnection(connection, applicationName);
+  const connection = prepareConnection(confConnection, applicationName);
 
-  return { ...config, connection: conn };
+  return { ...config, connection, searchPath: connection.schema };
 }
