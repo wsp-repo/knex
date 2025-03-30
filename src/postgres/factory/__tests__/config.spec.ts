@@ -18,6 +18,7 @@ describe('Check config', () => {
       applicationName: 'test',
       client: ConnectionClients.Postgres,
       connection: {
+        application_name: 'test:knex',
         database: 'base',
         host: '1.1.1.1',
         password: 'pass',
