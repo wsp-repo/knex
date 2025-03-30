@@ -17,14 +17,14 @@ async function afterCreateClient(
   connection: Connection,
   clientConfig: PgClientConfig,
 ): Promise<void> {
-  // для проверки подключения
-  await connection.query('SELECT 1;');
-
   if (clientConfig.applicationName?.length > 0) {
     const appName = getApplicationName(clientConfig.applicationName);
 
     await connection.query(`SET application_name='${appName}';`);
   }
+
+  // для проверки подключения
+  await connection.query('SELECT 1;');
 }
 
 /**

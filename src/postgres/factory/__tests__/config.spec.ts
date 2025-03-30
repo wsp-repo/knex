@@ -11,7 +11,8 @@ describe('Check config', () => {
       applicationName: 'test',
       client: ConnectionClients.Postgres,
       connection: {
-        connectionString: 'postgresql://user:pass@1.1.1.1:1234/base',
+        connectionString:
+          'postgresql://user:pass@1.1.1.1:1234/base?currentSchema=schema',
       },
     };
     const clientConfig: PgClientConfig = {
@@ -23,8 +24,10 @@ describe('Check config', () => {
         host: '1.1.1.1',
         password: 'pass',
         port: 1234,
+        schema: 'schema',
         user: 'user',
       },
+      searchPath: 'schema',
     };
 
     expect(pgClientConfig(knexConfig)).toEqual(clientConfig);
