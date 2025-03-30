@@ -33,9 +33,8 @@ export async function pgMigrateUp(
   await prepareUsers(clientConfig, migratorConfig);
 
   const config = getKnexConfig(clientConfig, migratorConfig);
-  const knexClient = pgKnexFactory(config);
 
-  await knexClient.migrate.up();
+  await pgKnexFactory(config).migrate.up();
 }
 
 export async function pgMigrateLatest(
@@ -48,9 +47,8 @@ export async function pgMigrateLatest(
   await prepareUsers(clientConfig, migratorConfig);
 
   const config = getKnexConfig(clientConfig, migratorConfig);
-  const knexClient = pgKnexFactory(config);
 
-  await knexClient.migrate.latest();
+  await pgKnexFactory(config).migrate.latest();
 }
 
 export async function pgMigrateDown(
@@ -60,7 +58,6 @@ export async function pgMigrateDown(
   const clientConfig = pgClientConfig(knexConfig);
 
   const config = getKnexConfig(clientConfig, migratorConfig);
-  const knexClient = pgKnexFactory(config);
 
-  await knexClient.migrate.down();
+  await pgKnexFactory(config).migrate.down();
 }
