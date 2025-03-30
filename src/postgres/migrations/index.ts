@@ -1,9 +1,27 @@
+import { trimObject } from '@zalib/core/dist';
+
 import { pgClientConfig, pgKnexFactory } from '../factory';
 import { prepareDatabase } from './database';
 import { prepareUsers } from './users';
 
 import { MigratorConfig } from '../../common/types';
 import { PgKnexConfig } from '../types';
+
+import { PgClientConfig } from '../types/configs';
+
+function getKnexConfig(
+  clientConfig: PgClientConfig,
+  migratorConfig: MigratorConfig,
+): PgClientConfig {
+  const { users, ...migrations } = migratorConfig;
+  const searchPath = migrations.schemaName;
+
+  /* prettier-ignore */
+  return trimObject(
+    { ...clientConfig, migrations, searchPath },
+    true,
+  );
+}
 
 export async function pgMigrateUp(
   knexConfig: PgKnexConfig,
@@ -14,9 +32,10 @@ export async function pgMigrateUp(
   await prepareDatabase(clientConfig, migratorConfig);
   await prepareUsers(clientConfig, migratorConfig);
 
-  const knexClient = pgKnexFactory(clientConfig);
+  const config = getKnexConfig(clientConfig, migratorConfig);
+  const knexClient = pgKnexFactory(config);
 
-  await knexClient.migrate.up(migratorConfig);
+  await knexClient.migrate.up();
 }
 
 export async function pgMigrateLatest(
@@ -28,9 +47,10 @@ export async function pgMigrateLatest(
   await prepareDatabase(clientConfig, migratorConfig);
   await prepareUsers(clientConfig, migratorConfig);
 
-  const knexClient = pgKnexFactory(clientConfig);
+  const config = getKnexConfig(clientConfig, migratorConfig);
+  const knexClient = pgKnexFactory(config);
 
-  await knexClient.migrate.latest(migratorConfig);
+  await knexClient.migrate.latest();
 }
 
 export async function pgMigrateDown(
@@ -38,7 +58,9 @@ export async function pgMigrateDown(
   migratorConfig: MigratorConfig,
 ): Promise<void> {
   const clientConfig = pgClientConfig(knexConfig);
-  const knexClient = pgKnexFactory(clientConfig);
 
-  await knexClient.migrate.down(migratorConfig);
+  const config = getKnexConfig(clientConfig, migratorConfig);
+  const knexClient = pgKnexFactory(config);
+
+  await knexClient.migrate.down();
 }
