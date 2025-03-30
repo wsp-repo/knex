@@ -1,44 +1,44 @@
-import { getClientConfig, knexFactory } from '../factory';
+import { pgClientConfig, pgKnexFactory } from '../factory';
 import { prepareDatabase } from './database';
 import { prepareUsers } from './users';
 
 import { MigratorConfig } from '../../common/types';
 import { PgKnexConfig } from '../types';
 
-export async function migrateUp(
+export async function pgMigrateUp(
   knexConfig: PgKnexConfig,
   migratorConfig: MigratorConfig,
 ): Promise<void> {
-  const clientConfig = getClientConfig(knexConfig);
+  const clientConfig = pgClientConfig(knexConfig);
 
   await prepareDatabase(clientConfig, migratorConfig);
   await prepareUsers(clientConfig, migratorConfig);
 
-  const knexClient = knexFactory(clientConfig);
+  const knexClient = pgKnexFactory(clientConfig);
 
   await knexClient.migrate.up(migratorConfig);
 }
 
-export async function migrateLatest(
+export async function pgMigrateLatest(
   knexConfig: PgKnexConfig,
   migratorConfig: MigratorConfig,
 ): Promise<void> {
-  const clientConfig = getClientConfig(knexConfig);
+  const clientConfig = pgClientConfig(knexConfig);
 
   await prepareDatabase(clientConfig, migratorConfig);
   await prepareUsers(clientConfig, migratorConfig);
 
-  const knexClient = knexFactory(clientConfig);
+  const knexClient = pgKnexFactory(clientConfig);
 
   await knexClient.migrate.latest(migratorConfig);
 }
 
-export async function migrateDown(
+export async function pgMigrateDown(
   knexConfig: PgKnexConfig,
   migratorConfig: MigratorConfig,
 ): Promise<void> {
-  const clientConfig = getClientConfig(knexConfig);
-  const knexClient = knexFactory(clientConfig);
+  const clientConfig = pgClientConfig(knexConfig);
+  const knexClient = pgKnexFactory(clientConfig);
 
   await knexClient.migrate.down(migratorConfig);
 }

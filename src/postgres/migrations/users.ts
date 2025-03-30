@@ -1,7 +1,7 @@
 import { Knex } from 'knex';
 
 import { rawQuery } from '../../common/helpers';
-import { knexFactory } from '../factory';
+import { pgKnexFactory } from '../factory';
 
 import { MigratorConfig, UserConfig, UserLevels } from '../../common/types';
 
@@ -12,6 +12,7 @@ type RoleConfig = UserConfig & {
   schema?: string;
 };
 
+const DEFAULT_SCHEMA = 'public';
 const ENTITIES = ['TABLES', 'SEQUENCES', 'FUNCTIONS'];
 
 /**
@@ -185,13 +186,14 @@ export async function prepareUsers(
 ): Promise<void> {
   const { users } = migratorConfig;
   const { database, user } = clientConfig.connection;
-  const schema = migratorConfig.schemaName;
+
+  const schema = migratorConfig.schemaName || DEFAULT_SCHEMA;
 
   if (!database) throw new Error('Empty database');
 
   if (!users?.length) return;
 
-  const knex = knexFactory(clientConfig);
+  const knex = pgKnexFactory(clientConfig);
   const roles = users.map((userItem) => {
     return { ...userItem, database, schema };
   });

@@ -4,7 +4,7 @@ import { ConnectionClients } from '../../common/types';
 import { PgKnexConfig } from '../types';
 
 import { PgClientConfig } from '../types/configs';
-import { getClientConfig } from './config';
+import { pgClientConfig } from './config';
 
 type Connection = {
   query: (query: string) => Promise<unknown>;
@@ -68,8 +68,8 @@ function getKnexConfig(clientConfig: PgClientConfig): Knex.Config {
 /**
  * Создает и возвращает Knex-объект соединения с БД
  */
-export function knexFactory(config: PgKnexConfig | PgClientConfig): Knex {
-  const knexConfig = getKnexConfig(getClientConfig(config));
+export function pgKnexFactory(config: PgKnexConfig | PgClientConfig): Knex {
+  const knexConfig = getKnexConfig(pgClientConfig(config));
 
   return createKnexClient(knexConfig);
 }

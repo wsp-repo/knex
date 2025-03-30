@@ -33,7 +33,7 @@ function prepareConnection(
 /**
  * Формирует и возвращает конфиг подключения к БД
  */
-export function getClientConfig(
+export function pgClientConfig(
   config: PgKnexConfig | PgClientConfig,
 ): PgClientConfig {
   return { ...config, connection: prepareConnection(config.connection) };

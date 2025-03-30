@@ -3,7 +3,7 @@ import { ConnectionClients } from '../../../common';
 import { PgKnexConfig } from '../../types';
 
 import { PgClientConfig } from '../../types/configs';
-import { getClientConfig } from '../config';
+import { pgClientConfig } from '../config';
 
 describe('Check config', () => {
   it('getConnectionConfig', () => {
@@ -26,6 +26,6 @@ describe('Check config', () => {
       },
     };
 
-    expect(getClientConfig(knexConfig)).toEqual(clientConfig);
+    expect(pgClientConfig(knexConfig)).toEqual(clientConfig);
   });
 });
