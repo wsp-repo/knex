@@ -1,5 +1,5 @@
 import { rawQuery } from '../../common/helpers';
-import { knexFactory } from '../factory';
+import { pgKnexFactory } from '../factory';
 
 import { MigratorConfig } from '../../common/types';
 
@@ -15,7 +15,7 @@ async function createDatabaseIfNotExists(
 
   if (!database) throw new Error('Empty database');
 
-  const knex = knexFactory({ ...clientConfig, connection });
+  const knex = pgKnexFactory({ ...clientConfig, connection });
 
   const dbData = await knex('pg_catalog.pg_database')
     .where('datname', database)
@@ -35,7 +35,7 @@ async function createSchemaIfNotExists(
 ): Promise<void> {
   if (!migratorConfig.schemaName) return;
 
-  const knex = knexFactory(clientConfig);
+  const knex = pgKnexFactory(clientConfig);
 
   await rawQuery(knex, 'CREATE SCHEMA IF NOT EXISTS ??;', [
     migratorConfig.schemaName,

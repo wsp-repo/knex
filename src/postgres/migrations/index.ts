@@ -1,44 +1,63 @@
-import { getClientConfig, knexFactory } from '../factory';
+import { trimObject } from '@zalib/core/dist';
+
+import { pgClientConfig, pgKnexFactory } from '../factory';
 import { prepareDatabase } from './database';
 import { prepareUsers } from './users';
 
 import { MigratorConfig } from '../../common/types';
 import { PgKnexConfig } from '../types';
 
-export async function migrateUp(
+import { PgClientConfig } from '../types/configs';
+
+function getKnexConfig(
+  clientConfig: PgClientConfig,
+  migratorConfig: MigratorConfig,
+): PgClientConfig {
+  const { users, ...migrations } = migratorConfig;
+  const searchPath = migrations.schemaName;
+
+  /* prettier-ignore */
+  return trimObject(
+    { ...clientConfig, migrations, searchPath },
+    true,
+  );
+}
+
+export async function pgMigrateUp(
   knexConfig: PgKnexConfig,
   migratorConfig: MigratorConfig,
 ): Promise<void> {
-  const clientConfig = getClientConfig(knexConfig);
+  const clientConfig = pgClientConfig(knexConfig);
 
   await prepareDatabase(clientConfig, migratorConfig);
   await prepareUsers(clientConfig, migratorConfig);
 
-  const knexClient = knexFactory(clientConfig);
+  const config = getKnexConfig(clientConfig, migratorConfig);
 
-  await knexClient.migrate.up(migratorConfig);
+  await pgKnexFactory(config).migrate.up();
 }
 
-export async function migrateLatest(
+export async function pgMigrateLatest(
   knexConfig: PgKnexConfig,
   migratorConfig: MigratorConfig,
 ): Promise<void> {
-  const clientConfig = getClientConfig(knexConfig);
+  const clientConfig = pgClientConfig(knexConfig);
 
   await prepareDatabase(clientConfig, migratorConfig);
   await prepareUsers(clientConfig, migratorConfig);
 
-  const knexClient = knexFactory(clientConfig);
+  const config = getKnexConfig(clientConfig, migratorConfig);
 
-  await knexClient.migrate.latest(migratorConfig);
+  await pgKnexFactory(config).migrate.latest();
 }
 
-export async function migrateDown(
+export async function pgMigrateDown(
   knexConfig: PgKnexConfig,
   migratorConfig: MigratorConfig,
 ): Promise<void> {
-  const clientConfig = getClientConfig(knexConfig);
-  const knexClient = knexFactory(clientConfig);
+  const clientConfig = pgClientConfig(knexConfig);
 
-  await knexClient.migrate.down(migratorConfig);
+  const config = getKnexConfig(clientConfig, migratorConfig);
+
+  await pgKnexFactory(config).migrate.down();
 }

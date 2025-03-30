@@ -3,7 +3,7 @@ import { ConnectionClients } from '../../../common';
 import { PgKnexConfig } from '../../types';
 
 import { PgClientConfig } from '../../types/configs';
-import { getClientConfig } from '../config';
+import { pgClientConfig } from '../config';
 
 describe('Check config', () => {
   it('getConnectionConfig', () => {
@@ -18,6 +18,7 @@ describe('Check config', () => {
       applicationName: 'test',
       client: ConnectionClients.Postgres,
       connection: {
+        application_name: 'test:knex',
         database: 'base',
         host: '1.1.1.1',
         password: 'pass',
@@ -26,6 +27,6 @@ describe('Check config', () => {
       },
     };
 
-    expect(getClientConfig(knexConfig)).toEqual(clientConfig);
+    expect(pgClientConfig(knexConfig)).toEqual(clientConfig);
   });
 });

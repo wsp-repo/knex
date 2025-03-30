@@ -4,20 +4,11 @@ import { ConnectionClients } from '../../common/types';
 import { PgKnexConfig } from '../types';
 
 import { PgClientConfig } from '../types/configs';
-import { getClientConfig } from './config';
+import { getApplicationName, pgClientConfig } from './config';
 
 type Connection = {
   query: (query: string) => Promise<unknown>;
 };
-
-/**
- * Адаптирует имя приложения под имя соединения
- */
-function prepareApplicationName(applicationName: string): string {
-  const appName = applicationName.replace(/[^\d\w]+/g, '_');
-
-  return `${appName.trim().toLowerCase()}:knex`;
-}
 
 /**
  * Обработчик создания соединения с БД
@@ -30,7 +21,7 @@ async function afterCreateClient(
   await connection.query('SELECT 1;');
 
   if (clientConfig.applicationName?.length > 0) {
-    const appName = prepareApplicationName(clientConfig.applicationName);
+    const appName = getApplicationName(clientConfig.applicationName);
 
     await connection.query(`SET application_name='${appName}';`);
   }
@@ -68,8 +59,8 @@ function getKnexConfig(clientConfig: PgClientConfig): Knex.Config {
 /**
  * Создает и возвращает Knex-объект соединения с БД
  */
-export function knexFactory(config: PgKnexConfig | PgClientConfig): Knex {
-  const knexConfig = getKnexConfig(getClientConfig(config));
+export function pgKnexFactory(config: PgKnexConfig | PgClientConfig): Knex {
+  const knexConfig = getKnexConfig(pgClientConfig(config));
 
   return createKnexClient(knexConfig);
 }
